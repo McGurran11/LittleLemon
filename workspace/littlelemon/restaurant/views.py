@@ -9,6 +9,7 @@ from .serializers import MenuSerializer, BookingSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.core import serializers
 import json
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 
@@ -19,13 +20,17 @@ def index(request):
 def about(request):
     return render(request, 'about.html')
 
-class MenuItemsView(generics.ListCreateAPIView):
-    queryset = Menu.objects.all()          # Defines the data source
-    serializer_class = MenuSerializer      # Defines how data is converted to/from JSON
+def MenuItemsView(request):
+    items = Menu.objects.all()
+    return render(request, 'menu.html', {"menu": items})
+#    queryset = Menu.objects.all()
+#    serializer_class = MenuSerializer
 
-class SingleMenuItemView(RetrieveUpdateAPIView, DestroyAPIView):
-    queryset = Menu.objects.all()          # Defines the data source
-    serializer_class = MenuSerializer      # Defines how data is converted to/from JSON
+def SingleMenuItemView(request, pk):
+    item = get_object_or_404(Menu, pk=pk)
+    return render(request, 'menu_item.html', {'item': item})
+#    queryset = Menu.objects.all()
+#   serializer_class = MenuSerializer
 
 class BookingViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -51,15 +56,15 @@ def book(request):
 def bookings(request):
     if request.method == "POST":
         data = json.loads(request.body)  # safer than json.load(request)
-        if not Booking.objects.filter(booking_date=data['booking_date']).exists():
-            booking = Booking(
-                name=data['name'],
-                booking_date=data['booking_date'],
-                no_of_guests=data['no_of_guests'],
-            )
-            booking.save()
-        else:
-            return HttpResponse("{'error':1}", content_type='application/json')
+        #if not Booking.objects.filter(booking_date=data['booking_date']).exists():
+        booking = Booking(
+            name=data['name'],
+            booking_date=data['booking_date'],
+            no_of_guests=data['no_of_guests'],
+        )
+        booking.save()
+        #else:
+            #return HttpResponse("{'error':1}", content_type='application/json')
     date = request.GET.get('date', datetime.today().date())
     bookings = Booking.objects.filter(booking_date=date)
     booking_json = serializers.serialize('json', bookings)
